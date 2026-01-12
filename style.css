@@ -30,3 +30,22 @@ button {
     padding: 10px 20px;
     font-size: 16px;
 }
+
+.cell {
+    transition: background-color 0.3s ease;
+}
+
+.cell.played {
+    animation: pop 0.25s ease-in-out;
+}
+
+@keyframes pop {
+    0% {
+        transform: scale(0.7);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}

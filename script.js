@@ -11,44 +11,77 @@ const winPatterns = [
 ];
 
 cells.forEach((cell, index) => {
-    cell.addEventListener("click", () => handleClick(cell, index));
+    cell.addEventListener("click", () => handlePlayerMove(cell, index));
 });
 
-function handleClick(cell, index) {
-    if (cell.textContent !== "" || !gameActive) return;
+function handlePlayerMove(cell, index) {
+    if (!gameActive || cell.textContent !== "") return;
 
-    cell.textContent = currentPlayer;
+    makeMove(cell, "X");
 
-    if (checkWin()) {
-        statusText.textContent = `Player ${currentPlayer} wins!`;
-        gameActive = false;
+    if (checkWin("X")) {
+        endGame("Player wins!");
         return;
     }
 
     if (isDraw()) {
-        statusText.textContent = "It's a draw!";
-        gameActive = false;
+        endGame("It's a draw!");
         return;
     }
 
-    currentPlayer = currentPlayer === "X" ? "O" : "X";
-    statusText.textContent = `Player ${currentPlayer}'s turn`;
+    statusText.textContent = "Computer's turn...";
+    setTimeout(computerMove, 500); // delay for realism
 }
 
-function checkWin() {
-    return winPatterns.some(pattern => {
-        return pattern.every(index => {
-            return cells[index].textContent === currentPlayer;
-        });
+function computerMove() {
+    if (!gameActive) return;
+
+    let emptyCells = [];
+    cells.forEach((cell, index) => {
+        if (cell.textContent === "") emptyCells.push(index);
     });
+
+    const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+    makeMove(cells[randomIndex], "O");
+
+    if (checkWin("O")) {
+        endGame("Computer wins!");
+        return;
+    }
+
+    if (isDraw()) {
+        endGame("It's a draw!");
+        return;
+    }
+
+    statusText.textContent = "Player X's turn";
+}
+
+function makeMove(cell, player) {
+    cell.textContent = player;
+    cell.classList.add("played");
+}
+
+function checkWin(player) {
+    return winPatterns.some(pattern =>
+        pattern.every(index => cells[index].textContent === player)
+    );
 }
 
 function isDraw() {
     return [...cells].every(cell => cell.textContent !== "");
 }
 
+function endGame(message) {
+    statusText.textContent = message;
+    gameActive = false;
+}
+
 function restartGame() {
-    cells.forEach(cell => cell.textContent = "");
+    cells.forEach(cell => {
+        cell.textContent = "";
+        cell.classList.remove("played");
+    });
     currentPlayer = "X";
     gameActive = true;
     statusText.textContent = "Player X's turn";
