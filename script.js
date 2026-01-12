@@ -1,59 +1,84 @@
 const cells = document.querySelectorAll(".cell");
 const statusText = document.getElementById("status");
+const strike = document.getElementById("strike");
 
 let currentPlayer = "X";
-let gameActive = true;
+let gameActive = false;
+let gameMode = "";
 
 const winPatterns = [
-    [0,1,2], [3,4,5], [6,7,8],
-    [0,3,6], [1,4,7], [2,5,8],
-    [0,4,8], [2,4,6]
+    { combo: [0,1,2], line: "row1" },
+    { combo: [3,4,5], line: "row2" },
+    { combo: [6,7,8], line: "row3" },
+    { combo: [0,3,6], line: "col1" },
+    { combo: [1,4,7], line: "col2" },
+    { combo: [2,5,8], line: "col3" },
+    { combo: [0,4,8], line: "diag1" },
+    { combo: [2,4,6], line: "diag2" }
 ];
 
 cells.forEach((cell, index) => {
-    cell.addEventListener("click", () => handlePlayerMove(cell, index));
+    cell.addEventListener("click", () => handleClick(cell, index));
 });
 
-function handlePlayerMove(cell, index) {
+function setMode(mode) {
+    gameMode = mode;
+    restartGame();
+    gameActive = true;
+    statusText.textContent = "Player X's turn";
+}
+
+function handleClick(cell, index) {
     if (!gameActive || cell.textContent !== "") return;
 
-    makeMove(cell, "X");
+    makeMove(cell, currentPlayer);
 
-    if (checkWin("X")) {
-        endGame("Player wins!");
+    const winData = checkWin(currentPlayer);
+    if (winData) {
+        drawStrike(winData);
+        statusText.textContent = `Player ${currentPlayer} Wins!`;
+        gameActive = false;
         return;
     }
 
     if (isDraw()) {
-        endGame("It's a draw!");
+        statusText.textContent = "It's a Draw!";
+        gameActive = false;
         return;
     }
 
-    statusText.textContent = "Computer's turn...";
-    setTimeout(computerMove, 500); // delay for realism
+    currentPlayer = currentPlayer === "X" ? "O" : "X";
+    statusText.textContent = `Player ${currentPlayer}'s turn`;
+
+    if (gameMode === "ai" && currentPlayer === "O") {
+        setTimeout(computerMove, 500);
+    }
 }
 
 function computerMove() {
-    if (!gameActive) return;
-
     let emptyCells = [];
-    cells.forEach((cell, index) => {
-        if (cell.textContent === "") emptyCells.push(index);
+    cells.forEach((cell, i) => {
+        if (cell.textContent === "") emptyCells.push(i);
     });
 
-    const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-    makeMove(cells[randomIndex], "O");
+    const index = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+    makeMove(cells[index], "O");
 
-    if (checkWin("O")) {
-        endGame("Computer wins!");
+    const winData = checkWin("O");
+    if (winData) {
+        drawStrike(winData);
+        statusText.textContent = "Computer Wins!";
+        gameActive = false;
         return;
     }
 
     if (isDraw()) {
-        endGame("It's a draw!");
+        statusText.textContent = "It's a Draw!";
+        gameActive = false;
         return;
     }
 
+    currentPlayer = "X";
     statusText.textContent = "Player X's turn";
 }
 
@@ -63,18 +88,31 @@ function makeMove(cell, player) {
 }
 
 function checkWin(player) {
-    return winPatterns.some(pattern =>
-        pattern.every(index => cells[index].textContent === player)
-    );
+    for (let pattern of winPatterns) {
+        if (pattern.combo.every(i => cells[i].textContent === player)) {
+            return pattern.line;
+        }
+    }
+    return null;
+}
+
+function drawStrike(type) {
+    const map = {
+        row1: { width: "100%", top: "50px" },
+        row2: { width: "100%", top: "155px" },
+        row3: { width: "100%", top: "260px" },
+        col1: { width: "300px", top: "150px", rotate: "90deg", left: "-100px" },
+        col2: { width: "300px", top: "150px", rotate: "90deg", left: "5px" },
+        col3: { width: "300px", top: "150px", rotate: "90deg", left: "110px" },
+        diag1:{ width: "350px", rotate: "45deg" },
+        diag2:{ width: "350px", rotate: "-45deg" }
+    };
+
+    Object.assign(strike.style, map[type], { width: map[type].width });
 }
 
 function isDraw() {
     return [...cells].every(cell => cell.textContent !== "");
-}
-
-function endGame(message) {
-    statusText.textContent = message;
-    gameActive = false;
 }
 
 function restartGame() {
@@ -82,7 +120,8 @@ function restartGame() {
         cell.textContent = "";
         cell.classList.remove("played");
     });
+    strike.style.width = "0";
     currentPlayer = "X";
-    gameActive = true;
-    statusText.textContent = "Player X's turn";
+    gameActive = false;
+    statusText.textContent = "Choose a mode to start";
 }
