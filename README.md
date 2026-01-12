@@ -41,6 +41,7 @@ An interactive Tic Tac Toe game built using **HTML, CSS, and JavaScript** with m
 ## Project Structure
 
 tic-tac-toe/
+
 │
 
 ├── index.html
